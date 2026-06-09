@@ -1,0 +1,5 @@
+set -e
+
+pnpm lint-staged
+pnpm pretty-quick --staged
+pnpm vitest --run --passWithNoTests --changed
