@@ -1,13 +1,14 @@
 import {
   createProjectionProviders,
+  type LoadCanonicalFactsResult,
   type ProjectionProviders,
 } from "./providers/index"
-import type { ProjectionSnapshot } from "./providers/index"
 import { ProjectionTargetNotFoundError } from "./errors"
-import { buildSnapshot, createRunSummary } from "./helpers"
+import { buildScopedSnapshotForTarget } from "./helpers"
 import type { ProjectionHandler } from "./types"
 
 async function buildProjectionAndPersist(
+  canonicalFacts: LoadCanonicalFactsResult,
   providers: ProjectionProviders,
   target:
     | {
@@ -18,21 +19,22 @@ async function buildProjectionAndPersist(
         statementImportId: string
         type: "statement"
       },
-): Promise<ProjectionSnapshot> {
-  const { receipts, bankTransactions } =
-    await providers.projectionStore.loadCanonicalFacts()
-  const snapshot = buildSnapshot(
-    receipts,
-    bankTransactions,
-    providers.labelingService,
-  )
-
-  await providers.projectionStore.replaceProjectionSnapshot({
-    snapshot,
+): Promise<void> {
+  const existingRelations =
+    await providers.projectionStore.loadProjectionRelations()
+  const { scope, snapshot } = buildScopedSnapshotForTarget({
+    bankTransactions: canonicalFacts.bankTransactions,
+    existingRelations,
+    labelingService: providers.labelingService,
+    receipts: canonicalFacts.receipts,
     target,
   })
 
-  return snapshot
+  await providers.projectionStore.replaceProjectionSnapshot({
+    scope,
+    snapshot,
+    target,
+  })
 }
 
 export function createProjectionHandler(
@@ -50,8 +52,9 @@ export function createProjectionHandler(
       }
     },
     async projectReceipt(input) {
-      const { receipts } = await providers.projectionStore.loadCanonicalFacts()
-      const receiptExists = receipts.some(
+      const canonicalFacts =
+        await providers.projectionStore.loadCanonicalFacts()
+      const receiptExists = canonicalFacts.receipts.some(
         (receipt) => receipt.receiptId === input.receiptId,
       )
 
@@ -59,37 +62,35 @@ export function createProjectionHandler(
         throw new ProjectionTargetNotFoundError("receipt_not_found")
       }
 
-      const snapshot = await buildProjectionAndPersist(providers, {
+      await buildProjectionAndPersist(canonicalFacts, providers, {
         receiptId: input.receiptId,
         type: "receipt",
       })
 
       return {
-        summary: createRunSummary(snapshot),
+        summary: await providers.projectionStore.getProjectionRunSummary(),
         trigger: "receipt",
       }
     },
     async projectStatement(input) {
-      const { bankTransactions } =
+      const canonicalFacts =
         await providers.projectionStore.loadCanonicalFacts()
-      const statementExists = bankTransactions.some(
+      const statementExists = canonicalFacts.bankTransactions.some(
         (transaction) =>
           transaction.statementImportId === input.statementImportId,
       )
 
       if (!statementExists) {
-        throw new ProjectionTargetNotFoundError(
-          "statement_import_not_found",
-        )
+        throw new ProjectionTargetNotFoundError("statement_import_not_found")
       }
 
-      const snapshot = await buildProjectionAndPersist(providers, {
+      await buildProjectionAndPersist(canonicalFacts, providers, {
         statementImportId: input.statementImportId,
         type: "statement",
       })
 
       return {
-        summary: createRunSummary(snapshot),
+        summary: await providers.projectionStore.getProjectionRunSummary(),
         trigger: "statement",
       }
     },

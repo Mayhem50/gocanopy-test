@@ -112,15 +112,28 @@ const canonicalFacts = {
 
 describe("createProjectionHandler", () => {
   it("rebuilds projection tables from canonical facts", async () => {
+    const loadCanonicalFacts = vi.fn(async () => canonicalFacts)
+    const loadProjectionRelations = vi.fn(async () => ({
+      bankTransactionReceipts: [],
+      merchantTransactions: [],
+      reconciliationCandidates: [],
+    }))
     const providers: ProjectionProviders = {
       labelingService: createRuleBasedLabelingService(),
       projectionStore: {
         getMerchantTransactionTableRows: vi.fn(async () => []),
+        getProjectionRunSummary: vi.fn(async () => ({
+          ambiguousCount: 2,
+          bankOnlyCount: 2,
+          candidateCount: 4,
+          cashCount: 1,
+          receiptOnlyCount: 0,
+          reconciledCount: 1,
+          merchantCount: 5,
+        })),
         getSpendMixSlices: vi.fn(async () => []),
-        loadCanonicalFacts: vi
-          .fn()
-          .mockResolvedValueOnce(canonicalFacts)
-          .mockResolvedValueOnce(canonicalFacts),
+        loadCanonicalFacts,
+        loadProjectionRelations,
         replaceProjectionSnapshot: vi.fn(async () => undefined),
       },
     }
@@ -142,10 +155,20 @@ describe("createProjectionHandler", () => {
       },
       trigger: "receipt",
     })
-    expect(providers.projectionStore.replaceProjectionSnapshot).toHaveBeenCalledOnce()
-    expect(providers.projectionStore.replaceProjectionSnapshot).toHaveBeenCalledWith({
+    expect(loadCanonicalFacts).toHaveBeenCalledOnce()
+    expect(loadProjectionRelations).toHaveBeenCalledOnce()
+    expect(
+      providers.projectionStore.replaceProjectionSnapshot,
+    ).toHaveBeenCalledOnce()
+    expect(
+      providers.projectionStore.replaceProjectionSnapshot,
+    ).toHaveBeenCalledWith({
+      scope: {
+        bankTransactionIds: new Set(["txn-2", "txn-3"]),
+        receiptIds: new Set(["receipt-2"]),
+      },
       snapshot: expect.objectContaining({
-        bankTransactionReceipts: expect.arrayContaining([
+        bankTransactionReceipts: [
           {
             associationRole: "best_match",
             bankTransactionId: "txn-2",
@@ -156,48 +179,22 @@ describe("createProjectionHandler", () => {
             bankTransactionId: "txn-3",
             receiptId: "receipt-2",
           },
-        ]),
+        ],
         merchantTransactions: expect.arrayContaining([
-          expect.objectContaining({
-            matchStatus: "reconciled",
-            sourceBankTransactionId: "txn-1",
-            sourceReceiptId: "receipt-1",
-          }),
           expect.objectContaining({
             matchStatus: "ambiguous",
             sourceBankTransactionId: "txn-2",
             sourceReceiptId: "receipt-2",
           }),
           expect.objectContaining({
-            matchStatus: "cash",
-            sourceReceiptId: "receipt-3",
-          }),
-          expect.objectContaining({
-            matchStatus: "ambiguous",
-            sourceBankTransactionId: "txn-5",
-            sourceReceiptId: "receipt-4",
-          }),
-          expect.objectContaining({
             matchStatus: "bank_only",
-            sourceBankTransactionId: "txn-4",
+            sourceBankTransactionId: "txn-3",
           }),
         ]),
         labelAssignments: expect.arrayContaining([
           expect.objectContaining({
-            labelId: "restaurant",
-            merchantTransactionId: "receipt:receipt-1",
-          }),
-          expect.objectContaining({
             labelId: "pharmacy",
             merchantTransactionId: "receipt:receipt-2",
-          }),
-          expect.objectContaining({
-            labelId: "grocery",
-            merchantTransactionId: "receipt:receipt-3",
-          }),
-          expect.objectContaining({
-            labelId: "subscription",
-            merchantTransactionId: "bank:txn-4",
           }),
         ]),
       }),
@@ -213,10 +210,24 @@ describe("createProjectionHandler", () => {
       labelingService: createRuleBasedLabelingService(),
       projectionStore: {
         getMerchantTransactionTableRows: vi.fn(async () => []),
+        getProjectionRunSummary: vi.fn(async () => ({
+          ambiguousCount: 0,
+          bankOnlyCount: 0,
+          candidateCount: 0,
+          cashCount: 0,
+          receiptOnlyCount: 0,
+          reconciledCount: 0,
+          merchantCount: 0,
+        })),
         getSpendMixSlices: vi.fn(async () => []),
         loadCanonicalFacts: vi.fn(async () => ({
           bankTransactions: [],
           receipts: [],
+        })),
+        loadProjectionRelations: vi.fn(async () => ({
+          bankTransactionReceipts: [],
+          merchantTransactions: [],
+          reconciliationCandidates: [],
         })),
         replaceProjectionSnapshot: vi.fn(async () => undefined),
       },

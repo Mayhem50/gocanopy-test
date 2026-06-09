@@ -1,3 +1,5 @@
+import type { ProjectionRunSummary } from "../types"
+
 export type MatchStatus =
   | "reconciled"
   | "ambiguous"
@@ -130,11 +132,34 @@ export type ProjectionSnapshotTarget =
       type: "statement"
     }
 
+export type ProjectionScope = {
+  bankTransactionIds: Set<string>
+  receiptIds: Set<string>
+}
+
+export type ProjectionRelations = {
+  bankTransactionReceipts: Pick<
+    BankTransactionReceiptRecord,
+    "bankTransactionId" | "receiptId"
+  >[]
+  merchantTransactions: Pick<
+    MerchantTransactionRecord,
+    "sourceBankTransactionId" | "sourceReceiptId"
+  >[]
+  reconciliationCandidates: Pick<
+    ReconciliationCandidateRecord,
+    "bankTransactionId" | "receiptId"
+  >[]
+}
+
 export type ProjectionStore = {
   getMerchantTransactionTableRows(): Promise<MerchantTransactionTableRow[]>
+  getProjectionRunSummary(): Promise<ProjectionRunSummary>
   getSpendMixSlices(): Promise<SpendMixSlice[]>
   loadCanonicalFacts(): Promise<LoadCanonicalFactsResult>
+  loadProjectionRelations(): Promise<ProjectionRelations>
   replaceProjectionSnapshot(input: {
+    scope: ProjectionScope
     snapshot: ProjectionSnapshot
     target: ProjectionSnapshotTarget
   }): Promise<void>

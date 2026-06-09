@@ -1,10 +1,12 @@
 import {
+  bankTransactionReceiptTable,
   bankTransactionTable,
   getPostgresDb,
   labelAssignmentTable,
   labelTable,
   merchantTable,
   merchantTransactionTable,
+  reconciliationCandidateTable,
   receiptTable,
   type BankTransactionRow,
   type ReceiptRow,
@@ -46,6 +48,10 @@ function toCanonicalBankTransaction(
     sourceRowNumber: row.sourceRowNumber,
     statementImportId: row.statementImportId,
   }
+}
+
+function toCount(value: string): number {
+  return Number(value)
 }
 
 export function createPostgresProjectionStore(): ProjectionStore {
@@ -96,6 +102,49 @@ export function createPostgresProjectionStore(): ProjectionStore {
         merchantTransactionId: row.merchantTransactionId,
         merchantName: row.merchantName,
       }))
+    },
+    async getProjectionRunSummary() {
+      const db = getPostgresDb("projection")
+      const [candidateRows, merchantRows, matchStatusRows] = await Promise.all([
+        db
+          .select({
+            count: sql<string>`cast(count(*) as text)`,
+          })
+          .from(reconciliationCandidateTable),
+        db
+          .select({
+            count: sql<string>`cast(count(*) as text)`,
+          })
+          .from(merchantTable),
+        db
+          .select({
+            count: sql<string>`cast(count(*) as text)`,
+            matchStatus: merchantTransactionTable.matchStatus,
+          })
+          .from(merchantTransactionTable)
+          .groupBy(merchantTransactionTable.matchStatus),
+      ])
+      const matchStatusCounts = {
+        ambiguous: 0,
+        bank_only: 0,
+        cash: 0,
+        receipt_only: 0,
+        reconciled: 0,
+      }
+
+      for (const row of matchStatusRows) {
+        matchStatusCounts[row.matchStatus] = toCount(row.count)
+      }
+
+      return {
+        ambiguousCount: matchStatusCounts.ambiguous,
+        bankOnlyCount: matchStatusCounts.bank_only,
+        candidateCount: toCount(candidateRows[0]?.count ?? "0"),
+        cashCount: matchStatusCounts.cash,
+        merchantCount: toCount(merchantRows[0]?.count ?? "0"),
+        receiptOnlyCount: matchStatusCounts.receipt_only,
+        reconciledCount: matchStatusCounts.reconciled,
+      }
     },
     async getSpendMixSlices() {
       const db = getPostgresDb("projection")
@@ -149,13 +198,47 @@ export function createPostgresProjectionStore(): ProjectionStore {
         receipts: receipts.map(toCanonicalReceipt),
       }
     },
-    async replaceProjectionSnapshot({ snapshot, target }) {
+    async loadProjectionRelations() {
+      const db = getPostgresDb("projection")
+      const [
+        reconciliationCandidates,
+        bankTransactionReceipts,
+        merchantTransactions,
+      ] = await Promise.all([
+        db
+          .select({
+            bankTransactionId: reconciliationCandidateTable.bankTransactionId,
+            receiptId: reconciliationCandidateTable.receiptId,
+          })
+          .from(reconciliationCandidateTable),
+        db
+          .select({
+            bankTransactionId: bankTransactionReceiptTable.bankTransactionId,
+            receiptId: bankTransactionReceiptTable.receiptId,
+          })
+          .from(bankTransactionReceiptTable),
+        db
+          .select({
+            sourceBankTransactionId:
+              merchantTransactionTable.sourceBankTransactionId,
+            sourceReceiptId: merchantTransactionTable.sourceReceiptId,
+          })
+          .from(merchantTransactionTable),
+      ])
+
+      return {
+        bankTransactionReceipts,
+        merchantTransactions,
+        reconciliationCandidates,
+      }
+    },
+    async replaceProjectionSnapshot({ scope, snapshot, target: _target }) {
       const db = getPostgresDb("projection")
 
       await replaceProjectionSnapshot({
         db,
+        scope,
         snapshot,
-        target,
       })
     },
   }

@@ -9,25 +9,7 @@ import {
 } from "@gocanopy/models"
 import { inArray, or } from "drizzle-orm"
 
-export type ProjectionScope = {
-  bankTransactionIds: Set<string>
-  receiptIds: Set<string>
-}
-
-export type ProjectionRelations = {
-  bankTransactionReceipts: Pick<
-    BankTransactionReceiptRow,
-    "bankTransactionId" | "receiptId"
-  >[]
-  merchantTransactions: Pick<
-    MerchantTransactionRow,
-    "merchantId" | "sourceBankTransactionId" | "sourceReceiptId"
-  >[]
-  reconciliationCandidates: Pick<
-    ReconciliationCandidateRow,
-    "bankTransactionId" | "receiptId"
-  >[]
-}
+import type { ProjectionRelations, ProjectionScope } from "./types"
 
 function addAssociationScope(
   scope: ProjectionScope,
@@ -115,7 +97,7 @@ export function isCandidateInScope(
 export function isMerchantTransactionInScope(
   merchantTransaction: Pick<
     MerchantTransactionRow,
-    "merchantId" | "sourceBankTransactionId" | "sourceReceiptId"
+    "sourceBankTransactionId" | "sourceReceiptId"
   >,
   scope: ProjectionScope,
 ): boolean {
