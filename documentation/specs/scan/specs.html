@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GoCanopy Scan Module Specification</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #17202a;
+        --muted: #5d6875;
+        --line: #d8dde5;
+        --panel: #f7f9fb;
+        --accent: #0f766e;
+      }
+
+      body {
+        margin: 0;
+        font-family:
+          Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        color: var(--ink);
+        background: #ffffff;
+        line-height: 1.55;
+      }
+
+      main {
+        max-width: 1040px;
+        margin: 0 auto;
+        padding: 48px 24px 72px;
+      }
+
+      h1,
+      h2,
+      h3 {
+        line-height: 1.2;
+        margin: 0 0 12px;
+      }
+
+      h1 {
+        font-size: 34px;
+      }
+
+      h2 {
+        border-top: 1px solid var(--line);
+        font-size: 24px;
+        margin-top: 36px;
+        padding-top: 28px;
+      }
+
+      p,
+      li {
+        font-size: 15px;
+      }
+
+      .meta {
+        color: var(--muted);
+      }
+
+      .summary {
+        background: var(--panel);
+        border-left: 4px solid var(--accent);
+        margin: 24px 0;
+        padding: 16px 18px;
+      }
+
+      table {
+        border-collapse: collapse;
+        margin: 16px 0;
+        width: 100%;
+      }
+
+      th,
+      td {
+        border: 1px solid var(--line);
+        padding: 10px 12px;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      th {
+        background: var(--panel);
+        font-weight: 700;
+      }
+
+      code {
+        background: #eef2f6;
+        border-radius: 4px;
+        padding: 1px 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Scan Module Specification</h1>
+      <p class="meta">
+        Updated to match the current implementation in
+        <code>apps/scan/src</code>.
+      </p>
+
+      <section class="summary">
+        <h2>Purpose</h2>
+        <p>
+          The scan module accepts one receipt image upload, normalizes it,
+          extracts OCR text and structured fields, persists the canonical
+          receipt, and triggers projection rebuild synchronously. It does not own
+          matching rules, projections, labels, or dashboard reads.
+        </p>
+      </section>
+
+      <section>
+        <h2>HTTP Contract</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Route</th>
+              <th>Method</th>
+              <th>Input</th>
+              <th>Behavior</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>/scan/receipts</code></td>
+              <td><code>POST</code></td>
+              <td>
+                Multipart form-data with one <code>receipt</code> file.
+              </td>
+              <td>
+                Accepts <code>image/png</code> and <code>image/jpeg</code>.
+                Returns <code>400</code> for missing or unsupported files,
+                <code>422</code> when extraction fails validation, and
+                <code>200</code> with the saved receipt otherwise.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Processing Flow</h2>
+        <pre><code>User upload
+  -&gt; Validate multipart request and MIME type
+  -&gt; Normalize image and compute content hash
+  -&gt; Run OCR on normalized image
+  -&gt; Extract structured receipt fields
+  -&gt; Reject the receipt if required fields are missing
+  -&gt; Persist canonical receipt in PostgreSQL
+  -&gt; Reuse existing receipt when content hash already exists
+  -&gt; Trigger projection rebuild synchronously</code></pre>
+      </section>
+
+      <section>
+        <h2>Extracted Field Contract</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Status</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>merchant</code></td>
+              <td>Required</td>
+              <td>Missing value produces <code>merchant_not_found</code>.</td>
+            </tr>
+            <tr>
+              <td><code>vatId</code></td>
+              <td>Required</td>
+              <td>Missing value produces <code>vat_id_not_found</code>.</td>
+            </tr>
+            <tr>
+              <td><code>purchasedOn</code></td>
+              <td>Required</td>
+              <td>
+                Stored as day precision in the canonical receipt row.
+              </td>
+            </tr>
+            <tr>
+              <td><code>totalAmount</code></td>
+              <td>Required</td>
+              <td>Missing value produces <code>total_amount_not_found</code>.</td>
+            </tr>
+            <tr>
+              <td><code>currency</code></td>
+              <td>Required</td>
+              <td>Missing value produces <code>currency_not_found</code>.</td>
+            </tr>
+            <tr>
+              <td><code>vatAmount</code></td>
+              <td>Optional warning</td>
+              <td>
+                Missing value produces <code>vat_amount_not_found</code>.
+              </td>
+            </tr>
+            <tr>
+              <td><code>paymentMethod</code></td>
+              <td>Optional warning</td>
+              <td>
+                Missing value produces <code>payment_method_not_found</code>.
+              </td>
+            </tr>
+            <tr>
+              <td><code>cardLast4</code></td>
+              <td>Optional warning</td>
+              <td>
+                Missing value produces <code>card_last4_not_found</code>.
+              </td>
+            </tr>
+            <tr>
+              <td><code>items</code></td>
+              <td>Optional warning</td>
+              <td>Missing items produce <code>items_not_found</code>.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Persistence</h2>
+        <p>
+          Canonical receipts are stored in PostgreSQL table
+          <code>receipt</code>. The current row stores:
+        </p>
+        <ul>
+          <li>source image path and normalized image path</li>
+          <li>content hash used for deduplication</li>
+          <li>OCR raw text</li>
+          <li>projected top-level fields such as merchant, VAT ID, date, amount, currency, payment method, and card suffix</li>
+          <li>the full <code>extractedFields</code> payload as JSON</li>
+        </ul>
+        <p>
+          When the same image hash is imported again, the existing receipt is
+          returned and no new row is inserted.
+        </p>
+      </section>
+
+      <section>
+        <h2>Implementation Notes</h2>
+        <ul>
+          <li>Image normalization is handled by <code>sharp</code>.</li>
+          <li>OCR is handled by <code>tesseract.js</code>.</li>
+          <li>
+            Module-to-module orchestration is synchronous and in-process through
+            the projection handler.
+          </li>
+          <li>
+            There is no user correction flow, manual override flow, or async
+            worker pipeline in the current implementation.
+          </li>
+        </ul>
+      </section>
+    </main>
+  </body>
+</html>

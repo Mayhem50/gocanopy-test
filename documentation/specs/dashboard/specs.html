@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GoCanopy Dashboard Specification</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #17202a;
+        --muted: #5d6875;
+        --line: #d8dde5;
+        --panel: #f7f9fb;
+        --accent: #be123c;
+      }
+
+      body {
+        margin: 0;
+        font-family:
+          Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        color: var(--ink);
+        background: #ffffff;
+        line-height: 1.55;
+      }
+
+      main {
+        max-width: 1040px;
+        margin: 0 auto;
+        padding: 48px 24px 72px;
+      }
+
+      h1,
+      h2,
+      h3 {
+        line-height: 1.2;
+        margin: 0 0 12px;
+      }
+
+      h1 {
+        font-size: 34px;
+      }
+
+      h2 {
+        border-top: 1px solid var(--line);
+        font-size: 24px;
+        margin-top: 36px;
+        padding-top: 28px;
+      }
+
+      p,
+      li {
+        font-size: 15px;
+      }
+
+      .meta {
+        color: var(--muted);
+      }
+
+      .summary {
+        background: var(--panel);
+        border-left: 4px solid var(--accent);
+        margin: 24px 0;
+        padding: 16px 18px;
+      }
+
+      table {
+        border-collapse: collapse;
+        margin: 16px 0;
+        width: 100%;
+      }
+
+      th,
+      td {
+        border: 1px solid var(--line);
+        padding: 10px 12px;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      th {
+        background: var(--panel);
+        font-weight: 700;
+      }
+
+      code {
+        background: #eef2f6;
+        border-radius: 4px;
+        padding: 1px 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Dashboard Specification</h1>
+      <p class="meta">
+        Updated to match the current implementation in
+        <code>apps/web/src/pages/dashboard</code>.
+      </p>
+
+      <section class="summary">
+        <h2>Purpose</h2>
+        <p>
+          The dashboard is a thin React front-end that exposes the two import
+          flows already present in the backend and reads two projection
+          views: spend mix and merchant transactions.
+        </p>
+      </section>
+
+      <section>
+        <h2>Current Layout</h2>
+        <pre><code>Header area
+  -&gt; Receipt upload card
+  -&gt; Bank statement upload card
+  -&gt; Static summary panel
+
+Data area
+  -&gt; Spend mix pie chart
+  -&gt; Merchant transactions table</code></pre>
+      </section>
+
+      <section>
+        <h2>Backend Dependencies</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Frontend action</th>
+              <th>Endpoint</th>
+              <th>Method</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Upload one receipt</td>
+              <td><code>/scan/receipts</code></td>
+              <td><code>POST</code></td>
+            </tr>
+            <tr>
+              <td>Upload one bank statement</td>
+              <td><code>/bank/statements</code></td>
+              <td><code>POST</code></td>
+            </tr>
+            <tr>
+              <td>Load spend mix</td>
+              <td><code>/projection/charts/spend-mix</code></td>
+              <td><code>GET</code></td>
+            </tr>
+            <tr>
+              <td>Load merchant transactions</td>
+              <td><code>/projection/merchant-transactions</code></td>
+              <td><code>GET</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Implemented Views</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>View</th>
+              <th>Current behavior</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Receipt upload card</td>
+              <td>
+                Accepts one PNG or JPEG file at a time and shows upload status.
+              </td>
+            </tr>
+            <tr>
+              <td>Bank upload card</td>
+              <td>
+                Accepts one CSV file at a time and shows import status.
+              </td>
+            </tr>
+            <tr>
+              <td>Spend mix card</td>
+              <td>
+                Renders a Recharts pie chart plus a legend from the spend-mix
+                API response.
+              </td>
+            </tr>
+            <tr>
+              <td>Merchant transactions card</td>
+              <td>
+                Renders a compact table with date, merchant, label, match
+                status, and formatted amount.
+              </td>
+            </tr>
+            <tr>
+              <td>Summary panel</td>
+              <td>
+                Displays static mock values; it is not currently wired to
+                backend data.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>What The Dashboard Does Not Do Yet</h2>
+        <ul>
+          <li>No forecast charts or forecast-by-label view.</li>
+          <li>No filters for date, label, currency, or match status.</li>
+          <li>No labeling workflow or correction workflow.</li>
+          <li>No projection review or correction queue.</li>
+          <li>No reseller or VAT-centric timeline exploration.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>Client Behavior</h2>
+        <ul>
+          <li>
+            On first render, the page fetches spend mix and merchant
+            transactions in parallel.
+          </li>
+          <li>
+            After a successful receipt or bank upload, the page reloads those
+            same two datasets.
+          </li>
+          <li>
+            If a load fails, the page currently clears both datasets rather than
+            showing a dedicated error state.
+          </li>
+        </ul>
+      </section>
+    </main>
+  </body>
+</html>

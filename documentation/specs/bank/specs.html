@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GoCanopy Bank Module Specification</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #17202a;
+        --muted: #5d6875;
+        --line: #d8dde5;
+        --panel: #f7f9fb;
+        --accent: #1d4ed8;
+      }
+
+      body {
+        margin: 0;
+        font-family:
+          Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        color: var(--ink);
+        background: #ffffff;
+        line-height: 1.55;
+      }
+
+      main {
+        max-width: 1040px;
+        margin: 0 auto;
+        padding: 48px 24px 72px;
+      }
+
+      h1,
+      h2,
+      h3 {
+        line-height: 1.2;
+        margin: 0 0 12px;
+      }
+
+      h1 {
+        font-size: 34px;
+      }
+
+      h2 {
+        border-top: 1px solid var(--line);
+        font-size: 24px;
+        margin-top: 36px;
+        padding-top: 28px;
+      }
+
+      p,
+      li {
+        font-size: 15px;
+      }
+
+      .meta {
+        color: var(--muted);
+      }
+
+      .summary {
+        background: var(--panel);
+        border-left: 4px solid var(--accent);
+        margin: 24px 0;
+        padding: 16px 18px;
+      }
+
+      table {
+        border-collapse: collapse;
+        margin: 16px 0;
+        width: 100%;
+      }
+
+      th,
+      td {
+        border: 1px solid var(--line);
+        padding: 10px 12px;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      th {
+        background: var(--panel);
+        font-weight: 700;
+      }
+
+      code {
+        background: #eef2f6;
+        border-radius: 4px;
+        padding: 1px 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Bank Module Specification</h1>
+      <p class="meta">
+        Updated to match the current implementation in
+        <code>apps/bank/src</code>.
+      </p>
+
+      <section class="summary">
+        <h2>Purpose</h2>
+        <p>
+          The bank module imports one statement CSV, validates and normalizes
+          rows, persists a canonical statement import plus bank transactions,
+          and triggers projection rebuild synchronously. It does not handle OCR,
+          dashboard rendering, or forecasting.
+        </p>
+      </section>
+
+      <section>
+        <h2>HTTP Contract</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Route</th>
+              <th>Method</th>
+              <th>Input</th>
+              <th>Behavior</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>/bank/statements</code></td>
+              <td><code>POST</code></td>
+              <td>
+                Multipart form-data with one <code>statement</code> file.
+              </td>
+              <td>
+                Requires a <code>.csv</code> filename and one of the accepted
+                CSV-like MIME types. Returns <code>400</code> for invalid input,
+                <code>422</code> for rejected statement content, and
+                <code>200</code> with the imported statement otherwise.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>CSV Contract</h2>
+        <p>The parser expects this exact header:</p>
+        <pre><code>date,description,amount_eur,balance_eur,currency</code></pre>
+        <table>
+          <thead>
+            <tr>
+              <th>Column</th>
+              <th>Meaning</th>
+              <th>Validation</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>date</code></td>
+              <td>Posting date</td>
+              <td>Must be <code>YYYY-MM-DD</code>.</td>
+            </tr>
+            <tr>
+              <td><code>description</code></td>
+              <td>Raw bank description</td>
+              <td>Must be non-empty.</td>
+            </tr>
+            <tr>
+              <td><code>amount_eur</code></td>
+              <td>Signed transaction amount</td>
+              <td>Must parse as decimal.</td>
+            </tr>
+            <tr>
+              <td><code>balance_eur</code></td>
+              <td>Running balance</td>
+              <td>Must parse as decimal.</td>
+            </tr>
+            <tr>
+              <td><code>currency</code></td>
+              <td>Currency code</td>
+              <td>Must be a supported ISO-style code.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Processing Flow</h2>
+        <pre><code>User upload
+  -&gt; Validate multipart request, file extension, and MIME type
+  -&gt; Store raw CSV and compute source file hash
+  -&gt; Read stored CSV content
+  -&gt; Parse records, including quoted values
+  -&gt; Reject when header is unsupported
+  -&gt; Normalize valid rows into canonical bank transactions
+  -&gt; Keep malformed rows with explicit error codes
+  -&gt; Persist statement import and transactions
+  -&gt; Reuse existing persisted import when source file hash already exists
+  -&gt; Trigger projection rebuild only for non-duplicate imports with transactions</code></pre>
+      </section>
+
+      <section>
+        <h2>Persistence</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Table</th>
+              <th>Role</th>
+              <th>Current notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>statement_import</code></td>
+              <td>One imported CSV file</td>
+              <td>
+                Stores <code>statement_import_id</code>,
+                <code>source_file</code>, <code>source_file_hash</code>,
+                <code>import_status</code>, and <code>imported_at</code>.
+              </td>
+            </tr>
+            <tr>
+              <td><code>bank_transaction</code></td>
+              <td>Normalized ledger rows</td>
+              <td>
+                Stores raw and normalized descriptions, signed amount, currency,
+                posting date, and original source row number.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p>
+          The only persisted import statuses today are <code>valid</code> and
+          <code>malformed</code>. Duplicate detection is a runtime behavior
+          based on <code>source_file_hash</code>; there is no persisted
+          <code>duplicate</code> enum value.
+        </p>
+      </section>
+
+      <section>
+        <h2>Malformed and Duplicate Behavior</h2>
+        <ul>
+          <li>
+            Malformed rows are returned as structured row-level errors instead
+            of being silently dropped.
+          </li>
+          <li>
+            A file whose hash already exists returns the previously persisted
+            import and transactions.
+          </li>
+          <li>
+            Duplicate imports do not trigger projection rebuild again.
+          </li>
+          <li>
+            Unsupported headers raise <code>statement_rejected</code> with
+            <code>invalid_statement_header</code>.
+          </li>
+        </ul>
+      </section>
+    </main>
+  </body>
+</html>
