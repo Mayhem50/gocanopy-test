@@ -1,0 +1,25 @@
+<mxfile host="65bd71144e">
+    <diagram id="u_yuStFPCd5KD-1i_AAG" name="Page-1">
+        <mxGraphModel dx="1570" dy="979" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="2" value="&lt;b&gt;Module Photo&lt;br&gt;&lt;/b&gt;- Récupérer photos du reçu&lt;br&gt;- Normaliser les photos? (taille, format, couleurs, rotation, etc)&lt;br&gt;&lt;div&gt;- Parser: OCR&lt;br&gt;- Normaliser la data de sortie&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="90" y="130" width="240" height="190" as="geometry"/>
+                </mxCell>
+                <mxCell id="3" value="&lt;b&gt;Bank Account&lt;/b&gt;&lt;br&gt;Analyse du CSV&lt;br&gt;Build de la &quot;base de données&quot;&lt;br&gt;Quid de la data malformed&lt;br&gt;Conservation: oui/non -&amp;gt; On anticipe qu&#39;on va recevoir des reçu qui sont déjà ici?&lt;br&gt;Normalisation data pour notre DM&amp;nbsp;&lt;br&gt;&lt;br&gt;(Labeling provenant de la banque?)" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="490" y="130" width="260" height="190" as="geometry"/>
+                </mxCell>
+                <mxCell id="4" value="Parser OCR:&lt;br&gt;- VAT ID&lt;br&gt;&lt;div&gt;- Commercant (Vendeur + optionel)&lt;br&gt;- Montant total&amp;nbsp;&lt;br&gt;- Devise&lt;br&gt;- Date&lt;br&gt;- Moyen de paiement&lt;br&gt;- Détails: items: designation, prix/qté -&amp;gt; prix unitaire (utiles?)&lt;br&gt;&lt;br&gt;Si présents:&lt;br&gt;- catégorisation du commerçant:&amp;nbsp;&lt;br&gt;&lt;br&gt;&lt;br&gt;WARNING: Explosion des labels de caté --&amp;gt; comment on l&#39;évite? (Reçu et banque et personel)&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;align=left;" vertex="1" parent="1">
+                    <mxGeometry x="90" y="360" width="400" height="270" as="geometry"/>
+                </mxCell>
+                <mxCell id="5" value="Une transaction peut apparaitre après la date de l&#39;achat mais jamais avant&lt;br&gt;Les noms des fournisseurs peuvent différés. Ex Amazon -&amp;gt; AMZN&lt;br&gt;&lt;br&gt;&lt;br&gt;Régles de match tickets vs Account:&lt;br&gt;- date on account &amp;gt;= date recipes&lt;br&gt;- Si montant ≠ pas match. En gros on fait plus qu&#39;un match par noms&amp;nbsp;&lt;br&gt;- Si 2 match on prend le plus exact&lt;br&gt;&lt;br&gt;Cas particulier Boots:&lt;br&gt;- On a 2 matchs, la plateforme séléctionne le meilleur mais conserve tous les matchs&lt;br&gt;&amp;nbsp; &amp;nbsp;---&amp;gt; 1 tickets: best_match | other_matches&lt;br&gt;&lt;div&gt;- L&#39;utilisateur upload le ticket du 1er record =&amp;gt; la timeline des tickets ticket n&#39;est plus bonne chez nous&lt;br&gt;&lt;br&gt;&lt;br&gt;=&amp;gt; Les transcaction (chrono) bancaires + tickets sont projetées en trasaction (chrono) commercants&lt;br&gt;=&amp;gt; split ?&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;align=left;" vertex="1" parent="1">
+                    <mxGeometry x="120" y="880" width="600" height="270" as="geometry"/>
+                </mxCell>
+                <mxCell id="6" value="&lt;b&gt;Resellers&lt;/b&gt;&lt;br&gt;&lt;br&gt;Id: VAT ID&lt;br&gt;Nom?:&amp;nbsp;&lt;br&gt;Transactions: []&lt;br&gt;&lt;div&gt;&lt;br/&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="120" y="680" width="450" height="130" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>
