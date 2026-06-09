@@ -1,5 +1,5 @@
-import type { ProjectionSnapshot } from "./providers/index"
-import type { MatchStatusCounts, ProjectionRunSummary } from "./types"
+import type { ProjectionSnapshot } from "../providers/index"
+import type { MatchStatusCounts, ProjectionRunSummary } from "../types"
 
 export function createRunSummary(
   snapshot: ProjectionSnapshot,

@@ -7,13 +7,13 @@ import type {
   MerchantRecord,
   MerchantTransactionRecord,
   ProjectionSnapshot,
-} from "./providers/index"
+} from "../providers/index"
 import {
   absoluteBankAmount,
   type CandidateMatchIndex,
   toAmountNumber,
 } from "./candidate-matching"
-import type { MerchantIdentity, MerchantMap } from "./types"
+import type { MerchantIdentity, MerchantMap } from "../types"
 
 type MerchantProjection = Pick<
   ProjectionSnapshot,

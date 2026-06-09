@@ -3,7 +3,7 @@ import type {
   CanonicalReceipt,
   LabelingService,
   ProjectionSnapshot,
-} from "./providers/index"
+} from "../providers/index"
 import { buildCandidateMatchIndex } from "./candidate-matching"
 import { buildMerchantProjection } from "./merchant-projection"
 

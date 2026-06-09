@@ -2,8 +2,11 @@ import type {
   CanonicalBankTransaction,
   CanonicalReceipt,
   ReconciliationCandidateRecord,
-} from "./providers/index"
-import type { BuildCandidateRecordsResult, CandidateComputation } from "./types"
+} from "../providers/index"
+import type {
+  BuildCandidateRecordsResult,
+  CandidateComputation,
+} from "../types"
 
 const LOW_SIGNAL_MERCHANT_TOKENS = new Set([
   "card",
