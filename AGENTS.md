@@ -35,6 +35,7 @@ Run focused package commands during iteration. Run the repo-level verification b
 ## TypeScript Rules
 
 - Avoid production `any`.
+- Use `type` by default. Use `interface` only for object-oriented class contracts when that choice is genuinely needed.
 - Prefer flat flows, early returns, and intent-named helpers.
 - Use object parameters when a function needs more than three parameters.
 - Use `on*` for callback props and public callback parameters.
