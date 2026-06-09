@@ -6,6 +6,9 @@ settings:
 
 catalogs:
   default:
+    '@hono/node-server':
+      specifier: 1.14.3
+      version: 1.14.3
     '@hono/zod-validator':
       specifier: 0.8.0
       version: 0.8.0
@@ -15,6 +18,9 @@ catalogs:
     hono:
       specifier: 4.12.23
       version: 4.12.23
+    tsx:
+      specifier: 4.21.1
+      version: 4.21.1
     zod:
       specifier: 4.4.3
       version: 4.4.3
@@ -122,6 +128,27 @@ importers:
       zod:
         specifier: 'catalog:'
         version: 4.4.3
+
+  apps/server:
+    dependencies:
+      '@gocanopy/bank':
+        specifier: workspace:*
+        version: link:../bank
+      '@gocanopy/projection':
+        specifier: workspace:*
+        version: link:../projection
+      '@gocanopy/scan':
+        specifier: workspace:*
+        version: link:../scan
+      '@hono/node-server':
+        specifier: 'catalog:'
+        version: 1.14.3(hono@4.12.23)
+      hono:
+        specifier: 'catalog:'
+        version: 4.12.23
+      tsx:
+        specifier: 'catalog:'
+        version: 4.21.1
 
   packages/models:
     dependencies:
@@ -363,6 +390,12 @@ packages:
   '@eslint/plugin-kit@0.7.2':
     resolution: {integrity: sha512-+CNAzxglkrpNf/kKywqQfk74QjtceuOE7Qm+AF8miRvPF/wmmK5+OJOgVh3AVTT3RP2mH3+FOaxlE5v72owk0A==}
     engines: {node: ^20.19.0 || ^22.13.0 || >=24}
+
+  '@hono/node-server@1.14.3':
+    resolution: {integrity: sha512-KuDMwwghtFYSmIpr4WrKs1VpelTrptvJ+6x6mbUcZnFcc213cumTF5BdqfHyW93B19TNI4Vaev14vOI2a0Ie3w==}
+    engines: {node: '>=18.14.1'}
+    peerDependencies:
+      hono: ^4
 
   '@hono/zod-validator@0.8.0':
     resolution: {integrity: sha512-5uS4S1/LKtZQYvD4BtpPUFkOv8d1wNxHHrChm26buMiEYc1FrHWvDUaKVBwkiVtvSExHSpLGDvcnpI2Copyj9w==}
@@ -1946,6 +1979,10 @@ snapshots:
       '@eslint/core': 1.2.1
       levn: 0.4.1
 
+  '@hono/node-server@1.14.3(hono@4.12.23)':
+    dependencies:
+      hono: 4.12.23
+
   '@hono/zod-validator@0.8.0(hono@4.12.23)(zod@4.4.3)':
     dependencies:
       hono: 4.12.23
@@ -2425,7 +2462,6 @@ snapshots:
       '@esbuild/win32-arm64': 0.27.7
       '@esbuild/win32-ia32': 0.27.7
       '@esbuild/win32-x64': 0.27.7
-    optional: true
 
   escape-string-regexp@4.0.0: {}
 
@@ -3061,7 +3097,6 @@ snapshots:
       esbuild: 0.27.7
     optionalDependencies:
       fsevents: 2.3.3
-    optional: true
 
   turbo@2.9.14:
     optionalDependencies:
