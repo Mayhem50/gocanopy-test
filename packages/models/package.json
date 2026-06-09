@@ -1,0 +1,29 @@
+{
+  "name": "@gocanopy/models",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest --run",
+    "build": "tsc -p tsconfig.build.json",
+    "db:migrate": "tsx node_modules/drizzle-kit/bin.cjs push"
+  },
+  "devDependencies": {
+    "@types/pg": "8.11.6",
+    "drizzle-kit": "catalog:",
+    "tsx": "catalog:"
+  },
+  "dependencies": {
+    "drizzle-orm": "catalog:",
+    "pg": "8.13.1"
+  }
+}
