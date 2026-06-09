@@ -2,10 +2,22 @@
   "files": [],
   "references": [
     {
-      "path": "./packages/core"
+      "path": "./packages/models"
     },
     {
-      "path": "./apps/cli"
+      "path": "./apps/bank"
+    },
+    {
+      "path": "./apps/scan"
+    },
+    {
+      "path": "./apps/projection"
+    },
+    {
+      "path": "./apps/server"
+    },
+    {
+      "path": "./apps/web"
     }
   ]
 }
