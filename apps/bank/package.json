@@ -1,0 +1,27 @@
+{
+  "name": "@gocanopy/bank",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest --run",
+    "build": "tsc -p tsconfig.build.json"
+  },
+  "dependencies": {
+    "@gocanopy/models": "workspace:*",
+    "@gocanopy/projection": "workspace:*",
+    "@hono/zod-validator": "catalog:",
+    "drizzle-orm": "catalog:",
+    "hono": "catalog:",
+    "zod": "catalog:"
+  }
+}

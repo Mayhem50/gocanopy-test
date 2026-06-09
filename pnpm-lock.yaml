@@ -57,6 +57,27 @@ importers:
         specifier: 4.1.7
         version: 4.1.7(@types/node@25.9.1)(jsdom@26.1.0)(vite@8.0.16(@types/node@25.9.1)(esbuild@0.27.7)(jiti@2.7.0)(tsx@4.21.1)(yaml@2.9.0))
 
+  apps/bank:
+    dependencies:
+      '@gocanopy/models':
+        specifier: workspace:*
+        version: link:../../packages/models
+      '@gocanopy/projection':
+        specifier: workspace:*
+        version: link:../projection
+      '@hono/zod-validator':
+        specifier: 'catalog:'
+        version: 0.8.0(hono@4.12.23)(zod@4.4.3)
+      drizzle-orm:
+        specifier: 'catalog:'
+        version: 0.43.1(@types/pg@8.11.6)(pg@8.13.1)
+      hono:
+        specifier: 'catalog:'
+        version: 4.12.23
+      zod:
+        specifier: 'catalog:'
+        version: 4.4.3
+
   apps/projection:
     dependencies:
       '@gocanopy/models':
