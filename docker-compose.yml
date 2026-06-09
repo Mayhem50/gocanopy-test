@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16.13-alpine3.23
+    container_name: gocanopy-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: gocanopy
+      POSTGRES_USER: gocanopy
+      POSTGRES_PASSWORD: gocanopy
+    ports:
+      - "5433:5432"
+    volumes:
+      - gocanopy-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gocanopy -d gocanopy"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  gocanopy-postgres-data:
