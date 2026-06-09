@@ -13,12 +13,14 @@
   "scripts": {
     "lint": "eslint .",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "vitest --run",
+    "test": "vitest --run --passWithNoTests",
     "build": "tsc -p tsconfig.build.json",
-    "db:migrate": "tsx scripts/migrate.ts"
+    "db:migrate": "tsx node_modules/drizzle-kit/bin.cjs push"
   },
   "devDependencies": {
-    "@types/pg": "8.11.6"
+    "@types/pg": "8.11.6",
+    "drizzle-kit": "catalog:",
+    "tsx": "catalog:"
   },
   "dependencies": {
     "drizzle-orm": "catalog:",
