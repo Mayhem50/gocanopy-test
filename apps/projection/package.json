@@ -1,5 +1,5 @@
 {
-  "name": "@gocanopy/models",
+  "name": "@gocanopy/projection",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -14,14 +14,13 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest --run",
-    "build": "tsc -p tsconfig.build.json",
-    "db:migrate": "tsx scripts/migrate.ts"
-  },
-  "devDependencies": {
-    "@types/pg": "8.11.6"
+    "build": "tsc -p tsconfig.build.json"
   },
   "dependencies": {
+    "@gocanopy/models": "workspace:*",
+    "@hono/zod-validator": "catalog:",
     "drizzle-orm": "catalog:",
-    "pg": "8.13.1"
+    "hono": "catalog:",
+    "zod": "catalog:"
   }
 }
